@@ -12,7 +12,7 @@
 #import <FacebookSDK/FacebookSDK.h>
 
 @interface AppDelegate()
-@property (strong, nonatomic) UIImageView *faceBookProfileImageContainerView;
+@property (strong, nonatomic) UIView *faceBookProfileImageContainerView;
 @end
 
 
@@ -52,6 +52,7 @@
     self.window.backgroundColor = [UIColor whiteColor];
     [self.window makeKeyAndVisible];
     _faceBookProfileImageContainerView = [[UIView alloc]initWithFrame:self.window.frame];
+    [self.window addSubview:_faceBookProfileImageContainerView];
     
     
     return YES;
@@ -59,7 +60,7 @@
 
 -(void)loginSuccess
 {
-    NSString *requestPath = @"me/?fields=name,location,gender,birthday,relationship_status,picture,email,id";
+    NSString *requestPath = @"me/?fields=name,location,gender,birthday,relationship_status,picture.type(large),email,id";
     
     FBRequest *request = [[FBRequest alloc] initWithSession:[PFFacebookUtils session] graphPath:requestPath];
     
@@ -74,6 +75,12 @@
             UIImage* imgProfile = [UIImage imageWithData:
                                    [NSData dataWithContentsOfURL:
                                     [NSURL URLWithString: sUrlPic]]];
+            
+            UIImageView *facebookProfileImageView = [[UIImageView alloc] initWithImage:imgProfile];
+            facebookProfileImageView.frame = _faceBookProfileImageContainerView.frame;
+            facebookProfileImageView.backgroundColor = [UIColor redColor];
+            facebookProfileImageView.contentMode = UIViewContentModeScaleAspectFit;
+            [_faceBookProfileImageContainerView addSubview:facebookProfileImageView];
             
             
             NSLog(@"%@", result);
