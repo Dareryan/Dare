@@ -33,7 +33,7 @@
     [PFFacebookUtils initializeFacebook];
     
     NSArray *permissions = @[@"email", @"user_friends"];
-    
+    if (FBSession.activeSession.state != FBSessionStateCreatedTokenLoaded) {
     [PFFacebookUtils logInWithPermissions:permissions block:^(PFUser *user, NSError *error) {
         if (!user) {
             NSLog(@"Uh oh. The user cancelled the Facebook login.");
@@ -46,6 +46,10 @@
             NSLog(@"Currently loggen in: %@", [PFUser currentUser]);
         }
     }];
+    }else{
+        
+        [self loginSuccess];
+    }
     
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     // Override point for customization after application launch.
@@ -92,10 +96,6 @@
             [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
                 if (!error) {
                     NSArray *data = [result objectForKey:@"data"];
-                    
-                    NSLog(@"%@", data);
-                    
-                    
                     if (data) {
                         //we now have an array of NSDictionary entries contating friend data
                         for (NSMutableDictionary *friendData in data) {
