@@ -9,6 +9,12 @@
 #import "AppDelegate.h"
 #import <Parse/Parse.h>
 #import "Constants.h"
+#import <FacebookSDK/FacebookSDK.h>
+
+@interface AppDelegate()
+@property (strong, nonatomic) UIImageView *faceBookProfileImageContainerView;
+@end
+
 
 @implementation AppDelegate
 
@@ -16,20 +22,88 @@
 @synthesize managedObjectModel = _managedObjectModel;
 @synthesize persistentStoreCoordinator = _persistentStoreCoordinator;
 
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    // Override point for customization after application launch.
-    self.window.backgroundColor = [UIColor whiteColor];
-    [self.window makeKeyAndVisible];
-    
     [Parse setApplicationId:ParseAppID
                   clientKey:ParseClientKey];
     
     [PFAnalytics trackAppOpenedWithLaunchOptions:launchOptions];
     
-   
+    [PFFacebookUtils initializeFacebook];
+    
+    NSArray *permissions = @[@"email", @"user_friends"];
+    
+    [PFFacebookUtils logInWithPermissions:permissions block:^(PFUser *user, NSError *error) {
+        if (!user) {
+            NSLog(@"Uh oh. The user cancelled the Facebook login.");
+        } else if (user.isNew) {
+            NSLog(@"User signed up and logged in through Facebook!");
+        } else {
+            NSLog(@"User logged in through Facebook!");
+            [self loginSuccess];
+            
+            NSLog(@"Currently loggen in: %@", [PFUser currentUser]);
+        }
+    }];
+    
+    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    // Override point for customization after application launch.
+    self.window.backgroundColor = [UIColor whiteColor];
+    [self.window makeKeyAndVisible];
+    _faceBookProfileImageContainerView = [[UIView alloc]initWithFrame:self.window.frame];
+    
+    
     return YES;
+}
+
+-(void)loginSuccess
+{
+    NSString *requestPath = @"me/?fields=name,location,gender,birthday,relationship_status,picture,email,id";
+    
+    FBRequest *request = [[FBRequest alloc] initWithSession:[PFFacebookUtils session] graphPath:requestPath];
+    
+    [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+        if (!error) {
+            NSDictionary *userData = (NSDictionary *)result; // The result is a dictionary
+            
+            NSDictionary *dicFacebookPicture = [userData objectForKey:@"picture"];
+            NSDictionary *dicFacebookData = [dicFacebookPicture objectForKey:@"data"];
+            NSString *sUrlPic= [dicFacebookData objectForKey:@"url"];
+            
+            UIImage* imgProfile = [UIImage imageWithData:
+                                   [NSData dataWithContentsOfURL:
+                                    [NSURL URLWithString: sUrlPic]]];
+            
+            
+            NSLog(@"%@", result);
+            
+            FBRequest *request = [[FBRequest alloc] initWithSession:[PFFacebookUtils session] graphPath:@"me/friends"];
+            
+            [request startWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+                if (!error) {
+                    NSArray *data = [result objectForKey:@"data"];
+                    
+                    NSLog(@"%@", data);
+                    
+                    
+                    if (data) {
+                        //we now have an array of NSDictionary entries contating friend data
+                        for (NSMutableDictionary *friendData in data) {
+                            
+                            NSLog(@"%@", friendData);
+                            
+                            // do something interesting with the friend data...
+                            
+                        }
+                    } else {
+                        NSLog(@"%@", error);
+                    }
+                    
+                }
+            }];
+        }
+    }];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application
@@ -40,7 +114,7 @@
 
 - (void)applicationDidEnterBackground:(UIApplication *)application
 {
-    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later. 
+    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
     // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
 }
 
@@ -66,11 +140,11 @@
     NSManagedObjectContext *managedObjectContext = self.managedObjectContext;
     if (managedObjectContext != nil) {
         if ([managedObjectContext hasChanges] && ![managedObjectContext save:&error]) {
-             // Replace this implementation with code to handle the error appropriately.
-             // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development. 
+            // Replace this implementation with code to handle the error appropriately.
+            // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
             NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
             abort();
-        } 
+        }
     }
 }
 
@@ -120,7 +194,7 @@
         /*
          Replace this implementation with code to handle the error appropriately.
          
-         abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development. 
+         abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
          
          Typical reasons for an error here include:
          * The persistent store is not accessible;
@@ -142,7 +216,7 @@
          */
         NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
         abort();
-    }    
+    }
     
     return _persistentStoreCoordinator;
 }
