@@ -68,22 +68,19 @@
         if (!error) {
             NSDictionary *userData = (NSDictionary *)result; // The result is a dictionary
             
-            NSDictionary *dicFacebookPicture = [userData objectForKey:@"picture"];
+           NSDictionary *dicFacebookPicture = [userData objectForKey:@"picture"];
             NSDictionary *dicFacebookData = [dicFacebookPicture objectForKey:@"data"];
             NSString *sUrlPic= [dicFacebookData objectForKey:@"url"];
             
             UIImage* imgProfile = [UIImage imageWithData:
                                    [NSData dataWithContentsOfURL:
                                     [NSURL URLWithString: sUrlPic]]];
-            
+           
             UIImageView *facebookProfileImageView = [[UIImageView alloc] initWithImage:imgProfile];
-            facebookProfileImageView.frame = _faceBookProfileImageContainerView.frame;
+            facebookProfileImageView.frame = CGRectMake(_faceBookProfileImageContainerView.frame.origin.x, _faceBookProfileImageContainerView.frame.origin.y, _faceBookProfileImageContainerView.frame.size.width, _faceBookProfileImageContainerView.frame.size.height/2);
             facebookProfileImageView.backgroundColor = [UIColor redColor];
-            facebookProfileImageView.contentMode = UIViewContentModeScaleAspectFit;
+            facebookProfileImageView.contentMode = UIViewContentModeScaleToFill;
             [_faceBookProfileImageContainerView addSubview:facebookProfileImageView];
-            
-            
-            NSLog(@"%@", result);
             
             FBRequest *request = [[FBRequest alloc] initWithSession:[PFFacebookUtils session] graphPath:@"me/friends"];
             
@@ -99,9 +96,20 @@
                         for (NSMutableDictionary *friendData in data) {
                             
                             NSLog(@"%@", friendData);
+                            NSString *friendID = friendData[@"id"];
                             
-                            // do something interesting with the friend data...
+
                             
+                                UIImage* imgProfile = [UIImage imageWithData:
+                                                       [NSData dataWithContentsOfURL:
+                                                        [NSURL URLWithString:[NSString stringWithFormat:@"http://graph.facebook.com/%@/picture?type=large", friendID]]]];
+                                
+                                UIImageView *friendFacebookProfileImageView = [[UIImageView alloc] initWithImage:imgProfile];
+                                friendFacebookProfileImageView.frame = CGRectMake(_faceBookProfileImageContainerView.frame.origin.x, _faceBookProfileImageContainerView.frame.size.height/2, _faceBookProfileImageContainerView.frame.size.width, _faceBookProfileImageContainerView.frame.size.height/2);
+                                friendFacebookProfileImageView.backgroundColor = [UIColor redColor];
+                                friendFacebookProfileImageView.contentMode = UIViewContentModeScaleToFill;
+                                [_faceBookProfileImageContainerView addSubview:friendFacebookProfileImageView];
+
                         }
                     } else {
                         NSLog(@"%@", error);
